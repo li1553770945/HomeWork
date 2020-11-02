@@ -45,6 +45,9 @@ class HomeWorkSerializer(serializers.Serializer):  # 用于登录的表单合法
 
 
 class HomeWorkInfSerializer(serializers.ModelSerializer):
+    owner =serializers.SerializerMethodField()
     class Meta:
         model = HomeWorkInfModel
         fields = '__all__'
+    def get_owner(self,obj):
+        return obj.owner.first_name
