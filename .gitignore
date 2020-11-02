@@ -1,3 +1,5 @@
 venv
 *.sqlite3
 .idea
+/*/migrations
+*.pyc
