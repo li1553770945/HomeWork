@@ -3,7 +3,7 @@ from .serializers import LoginSerializer,UserSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 import logging
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.authentication import SessionAuthentication
 from common.common import get_first_error
 
 
