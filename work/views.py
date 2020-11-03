@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import HomeWorkSerializer,HomeWorkInfSerializer
+from .serializers import HomeWorkSerializer,HomeWorkInfSerializer,HomeWorkAllSerializer,HomeWorkCreateSerializer
 from common.common import get_first_error
 from .models import HomeWorkInfModel
 from datetime import datetime
@@ -175,4 +175,66 @@ class HomeWorkView(APIView):
             context['error'] = "您无权执行此操作"
             return Response(context)
         query.delete()
+        return Response(context)
+
+
+class MyHomeWorkNumView(APIView):
+    def get(self, request):
+        context = dict()
+        context['err_code'] = 0
+        data = request.GET
+        user = request.user
+        if user.is_anonymous:
+            context['err_code'] = 1001
+            context['error'] = "您还未登录"
+            return Response(context)
+        status = data.get('status')
+        if status is None:
+            context['err_code'] = 2001
+            context['error'] = "请求参数不正确"
+            return Response(context)
+        if status == "member":
+            context['data'] = HomeWorkInfModel.objects.filter().count()
+        elif status == "owner":
+            context['data'] = HomeWorkInfModel.objects.filter(owner=user).count()
+        else:
+            context['err_code'] = 2001
+            context['error'] = "请求参数不正确"
+            return Response(context)
+        return Response(context)
+
+
+class MyHomeWorkView(APIView):
+
+    def get(self, request):
+        context = dict()
+        context['err_code'] = 0
+        data = request.GET
+        user = request.user
+        if user.is_anonymous:
+            context['err_code'] = 1001
+            context['error'] = "您还未登录"
+            return Response(context)
+        status = data.get('status')
+        try:
+            start = int(data.get('start')) - 1
+            end = int(data.get('end'))
+        except:
+            context['err_code'] = 2002
+            context['error'] = "参数格式不正确"
+            return Response(context)
+        if status is None or start is None or end is None:
+            context['err_code'] = 2001
+            context['error'] = "请求参数不正确"
+            return Response(context)
+        if status == "member":
+            work = HomeWorkInfModel.objects.order_by('-end_time').filter()[start:end]
+            context['data'] = HomeWorkAllSerializer(work, many=True).data
+        elif status == "owner":
+            work = HomeWorkInfModel.objects.order_by('-end_time').filter(owner=user)[start:end]
+            context['data'] = HomeWorkCreateSerializer(work, many=True).data
+        else:
+            context['err_code'] = 2001
+            context['error'] = "请求参数不正确"
+            return Response(context)
         return Response(context)

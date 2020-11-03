@@ -45,9 +45,33 @@ class HomeWorkSerializer(serializers.Serializer):  # 用于登录的表单合法
 
 
 class HomeWorkInfSerializer(serializers.ModelSerializer):
-    owner =serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
+
     class Meta:
         model = HomeWorkInfModel
         fields = '__all__'
-    def get_owner(self,obj):
+
+    def get_owner(self, obj):
+        return obj.owner.first_name
+
+
+class HomeWorkAllSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomeWorkInfModel
+        fields = ['id','name', 'end_time', 'owner','subject','end_time']
+
+    owner = serializers.SerializerMethodField()
+
+    def get_owner(self, obj):
+        return obj.owner.first_name
+
+
+class HomeWorkCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomeWorkInfModel
+        fields = ['id','name', 'end_time', 'owner','subject','end_time']
+
+    owner = serializers.SerializerMethodField()
+
+    def get_owner(self, obj):
         return obj.owner.first_name
