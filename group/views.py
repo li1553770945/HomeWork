@@ -1,6 +1,6 @@
 from rest_framework.views import APIView, Response
 from .serializers import GroupSerializer, GroupsSerializer, CreateGroupsSerializer, GroupUnSerializer, \
-    valid_group_information
+    GroupMembersSerializer
 from .models import GroupModel, GroupMembersModel
 from common.common import get_first_error
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
@@ -14,7 +14,6 @@ class CsrfExemptSessionAuthentication(SessionAuthentication):
 
 
 class GroupView(APIView):
-
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
 
     def get(self, request):
@@ -72,9 +71,9 @@ class GroupView(APIView):
             context['err_code'] = 2002
             return Response(context)
         data = data.data
-        group=GroupModel.objects.create(owner=user, name=data['name'], desc=data['desc'], password=data['password'])
-        context['data']=dict()
-        context['data']['id']=group.id
+        group = GroupModel.objects.create(owner=user, name=data['name'], desc=data['desc'], password=data['password'])
+        context['data'] = dict()
+        context['data']['id'] = group.id
         return Response(context)
 
     def put(self, request):
@@ -95,7 +94,7 @@ class GroupView(APIView):
             return Response(context)
         data = data.data
 
-        id= put_data.get('id')
+        id = put_data.get('id')
         if id is None:
             context['error'] = "没有请求的id"
             context['err_code'] = 2002
@@ -116,7 +115,7 @@ class GroupView(APIView):
             context['err_code'] = 4003
             context['error'] = "您无权执行此操作"
             return Response(context)
-        querys.update(name=data['name'],desc=data['desc'],password=data['password'])
+        querys.update(name=data['name'], desc=data['desc'], password=data['password'])
         return Response(context)
 
     def delete(self, request):
@@ -152,6 +151,79 @@ class GroupView(APIView):
         group.delete()
         return Response(context)
 
+
+class GroupMembersView(APIView):
+    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
+
+    def get(self, request):
+        context = dict()
+        context['err_code'] = 0
+        user = request.user
+        if user.is_anonymous:
+            context['err_code'] = 1001
+            context['error'] = "您还未登录"
+            return Response(context)
+        data = request.GET
+        id = data.get('id')
+        if id is None:
+            context['err_code'] = 2001
+            context['error'] = "请求参数不正确"
+            return Response(context)
+        try:
+            id = int(id)
+        except:
+            context['err_code'] = 2002
+            context['error'] = "参数格式不正确"
+            return Response(context)
+        group = GroupModel.objects.filter(id=id)
+        if not group.exists():
+            context['err_code'] = 4004
+            context['error'] = "该小组不存在"
+            return Response(context)
+        group = group.first()
+        if user != group.owner:
+            context['err_code'] = 4003
+            context['error'] = "没有权限执行该操作"
+            return Response(context)
+        context['data'] = GroupMembersSerializer(group).data['members']
+        return Response(context)
+
+    def delete(self, request):
+        context = dict()
+        context['err_code'] = 0
+        user = request.user
+        if user.is_anonymous:
+            context['err_code'] = 1001
+            context['error'] = "您还未登录"
+            return Response(context)
+        data = QueryDict(request.body)
+        gid = data.get('group_id')
+        uid = data.get('user_id')
+        if gid is None or uid is None:
+            context['err_code'] = 2001
+            context['error'] = "请求参数不正确"
+            return Response(context)
+        try:
+            uid = int(uid)
+            gid = int(gid)
+        except:
+            context['err_code'] = 2002
+            context['error'] = "参数格式不正确"
+            return Response(context)
+        member=GroupMembersModel.objects.filter(user__id=uid,group__id=gid)
+        group = GroupModel.objects.filter(id=gid)
+        if not member.exists() or not group.exists():
+            context['err_code'] = 4004
+            context['error'] = "该成员不在您的小组"
+            return Response(context)
+        member = member.first()
+        group=group.first()
+        if user != group.owner:
+            context['err_code'] = 4003
+            context['error'] = "没有权限执行该操作"
+            return Response(context)
+        member.delete()
+        return Response(context)
 
 class MyGroupView(APIView):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)

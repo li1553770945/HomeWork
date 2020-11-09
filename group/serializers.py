@@ -4,25 +4,19 @@ import re
 
 
 class GroupSerializer(serializers.ModelSerializer):
-    members = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
+
     class Meta:
         model = GroupModel
         fields = ['id', 'name', 'desc', 'create_time', 'owner', 'members', 'password']
 
-    def get_members(self, obj):
-        members_list=list()
-        members=obj.get_members()
-        for member in members:
-            members_list.append({'id':member.id,'name':member.first_name})
-        return members_list
-    def get_owner(self,obj):
+    def get_owner(self, obj):
         return obj.owner.first_name
 
 
 class GroupUnSerializer(serializers.Serializer):
     name = serializers.CharField()
-    desc = serializers.CharField(required=False,default="")
+    desc = serializers.CharField(required=False, default="")
     password = serializers.CharField()
 
     def validate_name(self, name):
@@ -55,8 +49,9 @@ def valid_group_information(name, data):
 
 class GroupsSerializer(serializers.Serializer):
     id = serializers.SerializerMethodField()
-    time = serializers.DateTimeField()
+    time = serializers.SerializerMethodField()
     name = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
 
     def get_id(self, obj):
         return obj.group.id
@@ -64,8 +59,25 @@ class GroupsSerializer(serializers.Serializer):
     def get_name(self, obj):
         return obj.group.name
 
+    def get_time(self, obj):
+        return obj.time
+
+    def get_owner(self, obj):
+        return obj.group.owner.first_name
+
 
 class CreateGroupsSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroupModel
-        fields = ['id', 'name', 'create_time','owner']
+        fields = ['id', 'name', 'create_time']
+
+
+class GroupMembersSerializer(serializers.Serializer):
+    members = serializers.SerializerMethodField()
+
+    def get_members(self, obj):
+        members_list = list()
+        members = obj.get_members()
+        for member in members:
+            members_list.append({'id': member.id, 'name': member.first_name,'username':member.username})
+        return members_list
