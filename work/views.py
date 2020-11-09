@@ -119,17 +119,17 @@ class HomeWorkView(APIView):
                 context['err_code'] = 2002
                 context['error'] = "参数格式不正确"
                 return Response(context)
-            query = HomeWorkInfModel.objects.filter(id=id)
-            if not query.exists():  # 请求数据不存在
+            querys = HomeWorkInfModel.objects.filter(id=id)
+            if not querys.exists():  # 请求数据不存在
                 context['err_code'] = 4004
                 context['error'] = "无法找到您要的数据"
                 return Response(context)
-            query = query.first()
+            query = querys.first()
             if user != query.owner:
                 context['err_code'] = 4003
                 context['error'] = "您无权执行此操作"
                 return Response(context)
-            HomeWorkInfModel.objects.update(name=data['name'],
+            querys.update(name=data['name'],
                                             type=data['type'],
                                             subject=data['subject'],
                                             remark=data.get('remark') if data.get('remark') else '',

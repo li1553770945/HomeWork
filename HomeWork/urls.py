@@ -29,6 +29,6 @@ urlpatterns = [
     path('submit/',SubmitView.as_view(),),
     path('group/',GroupView.as_view()),
     path('mygroup/',MyGroupView.as_view()),
-    path('mygroupnum',MyGroupNumView.as_view()),
+    path('mygroupnum/',MyGroupNumView.as_view()),
     path('register/',RegisterView.as_view()),
 ]
