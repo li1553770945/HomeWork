@@ -39,3 +39,5 @@ class DoneModel(models.Model):
     work = models.ForeignKey(to=HomeWorkInfModel, verbose_name="作业", on_delete=models.CASCADE, related_name='done')
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Done", verbose_name="创建人")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")  # 创建的时间
+
+

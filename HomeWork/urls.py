@@ -15,8 +15,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from login.views import LoginView,LogOutView,MeView
+from login.views import LoginView,LogOutView,MeView,RegisterView
 from work.views import HomeWorkView,MyHomeWorkNumView,MyHomeWorkView,SubmitView
+from group.views import GroupView,MyGroupNumView,MyGroupView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/',LoginView.as_view()),
@@ -26,4 +27,8 @@ urlpatterns = [
     path('myhomeworknum/',MyHomeWorkNumView.as_view()),
     path('myhomework/',MyHomeWorkView.as_view()),
     path('submit/',SubmitView.as_view(),),
+    path('group/',GroupView.as_view()),
+    path('mygroup/',MyGroupView.as_view()),
+    path('mygroupnum',MyGroupNumView.as_view()),
+    path('register/',RegisterView.as_view()),
 ]
