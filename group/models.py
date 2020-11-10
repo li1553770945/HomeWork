@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User
-from work.models import HomeWorkInfModel
 
 
 # Create your models here.
@@ -40,13 +39,3 @@ class GroupMembersModel(models.Model):
 
     def __str__(self):
         return "{}-{}".format(self.group,self.user.first_name)
-
-
-class WorkGroupModel(models.Model):
-    class Meta:
-        db_table = "homeworkgroup"
-        verbose_name = "作业小组"
-        verbose_name_plural = verbose_name
-
-    group = models.ForeignKey(GroupModel, on_delete=models.CASCADE, verbose_name="小组", related_name="work")
-    work = models.ForeignKey(HomeWorkInfModel, on_delete=models.CASCADE, verbose_name="作业", related_name="groups")

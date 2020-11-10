@@ -36,6 +36,23 @@ class HomeWorkView(APIView):
             context['err_code'] = 0
             data = data.data
             end_time = data['end_time']
+            groups = request.POST.get('groups')
+            if groups is None or len(groups)==0:
+                context['error'] = "至少选择一个小组"
+                context['err_code'] = 2002
+                return Response(context)
+            groups=str(groups)
+            groups=groups.split(',')
+            groups_in=list()
+            try:
+                for group in groups:
+                    group=int(group)
+                    groups_in.append(group)
+            except:
+                context['error'] = "小组id只能为int"
+                context['err_code'] = 2002
+                return Response(context)
+
             homework = HomeWorkInfModel.objects.create(name=data['name'],
                                                        type=data['type'],
                                                        subject=data['subject'],
@@ -50,8 +67,12 @@ class HomeWorkView(APIView):
                                                                          day=int(end_time[8:10]),
                                                                          hour=int(end_time[11:13]),
                                                                          minute=int(end_time[14:16])
-                                                                         )
+                                                                         ),
+
                                                        )
+
+            for group_id in groups:
+                homework.groups.add(group_id)
             context['data'] = dict()
             context['data']['id'] = homework.id
             return Response(context)
@@ -87,6 +108,7 @@ class HomeWorkView(APIView):
                 context['data'].update({'is_creater': True})
             else:
                 context['data'].update({'is_creater': False})
+
             return Response(context)
 
     def put(self, request):

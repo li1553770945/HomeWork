@@ -10,7 +10,6 @@ class HomeWorkSerializer(serializers.Serializer):  # 用于登录的表单合法
     end_time = serializers.CharField()
     member_can_know_donelist = serializers.CharField()
     member_can_see_others = serializers.CharField()
-
     def validate_name(self, name):
         if len(name) > 50:
             raise serializers.ValidationError("名称长度过长")
@@ -46,7 +45,7 @@ class HomeWorkSerializer(serializers.Serializer):  # 用于登录的表单合法
 
 class HomeWorkInfSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
-
+    groups=serializers.SerializerMethodField()
     class Meta:
         model = HomeWorkInfModel
         fields = '__all__'
@@ -54,6 +53,15 @@ class HomeWorkInfSerializer(serializers.ModelSerializer):
     def get_owner(self, obj):
         return obj.owner.first_name
 
+    def get_groups(self,obj):
+        groups_query = obj.groups.all()
+        groups_list = list()
+        for group in groups_query:
+            group_inf = dict()
+            group_inf['id'] = group.id
+            group_inf['name'] = group.name
+            groups_list.append(group_inf)
+        return groups_list
 
 class HomeWorkAllSerializer(serializers.ModelSerializer):
     class Meta:

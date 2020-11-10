@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import GroupModel, GroupMembersModel, WorkGroupModel
+from .models import GroupModel, GroupMembersModel
 
 
 # Register your models here.
@@ -22,4 +22,3 @@ class WorkGroupAdmin(admin.ModelAdmin):
 
 admin.site.register(GroupModel, GroupAdmin)
 admin.site.register(GroupMembersModel, GroupMembersAdmin)
-admin.site.register(WorkGroupModel, WorkGroupAdmin)

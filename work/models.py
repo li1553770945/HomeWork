@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 import datetime
+from group.models import GroupModel
 
 
 # Create your models here.
@@ -25,7 +26,7 @@ class HomeWorkInfModel(models.Model):
                                                    default=False)
     member_can_see_others = models.BooleanField(verbose_name="成员可互相查看作业", choices=((False, "否"), (True, "是")),
                                                 default=False)
-
+    groups=models.ManyToManyField(to=GroupModel,related_name="work",verbose_name="参与组")
 
 class DoneModel(models.Model):
     class Meta:
