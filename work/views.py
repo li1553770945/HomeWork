@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import HomeWorkUpSerializer, HomeWorkInfSerializer, HomeWorkSerializer, HomeWorkCreateSerializer
 from common.common import get_first_error
-from .models import HomeWorkInfModel,HomeWorkMembersModel
+from .models import HomeWorkInfModel, HomeWorkMembersModel
 from datetime import datetime
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from django.http import QueryDict
@@ -37,16 +37,16 @@ class HomeWorkView(APIView):
             data = data.data
             end_time = data['end_time']
             groups = request.POST.get('groups')
-            if groups is None or len(groups)==0:
+            if groups is None or len(groups) == 0:
                 context['error'] = "至少选择一个小组"
                 context['err_code'] = 2002
                 return Response(context)
-            groups=str(groups)
-            groups=groups.split(',')
-            groups_in=list()
+            groups = str(groups)
+            groups = groups.split(',')
+            groups_in = list()
             try:
                 for group in groups:
-                    group=int(group)
+                    group = int(group)
                     groups_in.append(group)
             except:
                 context['error'] = "小组id只能为int"
@@ -70,7 +70,6 @@ class HomeWorkView(APIView):
                                                                          ),
 
                                                        )
-
             for group_id in groups:
                 homework.groups.add(group_id)
             context['data'] = dict()
@@ -96,15 +95,22 @@ class HomeWorkView(APIView):
                 context['err_code'] = 2002
                 context['error'] = "参数格式不正确"
                 return Response(context)
-            query = HomeWorkInfModel.objects.filter(id=id)
-            if not query.exists():  # 请求数据不存在
+            querys = HomeWorkInfModel.objects.filter(id=id)
+            if not querys.exists():  # 请求数据不存在
                 context['err_code'] = 4004
                 context['error'] = "无法找到您要的数据"
                 return Response(context)
-            query = query.first()
+            query = querys.first()
+            is_member = HomeWorkMembersModel.objects.filter(owner=user, work__id=id).exists()
+            is_owner = (user == query.owner)
+            if not is_member and not is_owner:
+                context['err_code'] = 4003
+                context['error'] = "您无权查看此内容"
+                return Response(context)
+
             context['err_code'] = 0
             context['data'] = HomeWorkInfSerializer(query).data
-            if user == query.owner:
+            if is_owner:
                 context['data'].update({'is_creater': True})
             else:
                 context['data'].update({'is_creater': False})
@@ -152,21 +158,21 @@ class HomeWorkView(APIView):
                 context['error'] = "您无权执行此操作"
                 return Response(context)
             querys.update(name=data['name'],
-                                            type=data['type'],
-                                            subject=data['subject'],
-                                            remark=data.get('remark') if data.get('remark') else '',
-                                            owner=user,
-                                            member_can_know_donelist=True if data[
-                                                                                 'member_can_know_donelist'] == 'true' else False,
-                                            member_can_see_others=True if data[
-                                                                              'member_can_see_others'] == 'true' else False,
-                                            end_time=datetime(year=int(end_time[0:4]),
-                                                              month=int(end_time[5:7]),
-                                                              day=int(end_time[8:10]),
-                                                              hour=int(end_time[11:13]),
-                                                              minute=int(end_time[14:16])
-                                                              )
-                                            )
+                          type=data['type'],
+                          subject=data['subject'],
+                          remark=data.get('remark') if data.get('remark') else '',
+                          owner=user,
+                          member_can_know_donelist=True if data[
+                                                               'member_can_know_donelist'] == 'true' else False,
+                          member_can_see_others=True if data[
+                                                            'member_can_see_others'] == 'true' else False,
+                          )
+            query.end_time = datetime(year=int(end_time[0:4]),
+                                      month=int(end_time[5:7]),
+                                      day=int(end_time[8:10]),
+                                      hour=int(end_time[11:13]),
+                                      minute=int(end_time[14:16]))
+            query.save()  # 没有这一行不能触发自动修改事件
             return Response(context)
 
     def delete(self, request):
@@ -220,9 +226,9 @@ class MyHomeWorkNumView(APIView):
             context['error'] = "请求参数不正确"
             return Response(context)
         if status == "member":
-            context['data'] = user.work.count()
-        elif status=='notdone':
-            context['data'] = user.work.filter(done=False).count()
+            context['data'] = HomeWorkMembersModel.objects.filter(owner=user).count()
+        elif status == 'notdone':
+            context['data'] = HomeWorkMembersModel.objects.filter(owner=user, done=False).count()
         elif status == "owner":
             context['data'] = HomeWorkInfModel.objects.filter(owner=user).count()
         else:
@@ -257,10 +263,10 @@ class MyHomeWorkView(APIView):
             context['error'] = "请求参数不正确"
             return Response(context)
         if status == "member":
-            work = HomeWorkMembersModel.objects.filter(owner=user).order_by('-end_time')
+            work = HomeWorkMembersModel.objects.filter(owner=user).order_by('-end_time')[start:end]
             context['data'] = HomeWorkSerializer(work, many=True).data
-        elif status=="notdone":
-            work = HomeWorkMembersModel.objects.filter(owner=user,done=False).order_by('-end_time')
+        elif status == "notdone":
+            work = HomeWorkMembersModel.objects.filter(owner=user, done=False).order_by('-end_time')[start:end]
             context['data'] = HomeWorkSerializer(work, many=True).data
         elif status == "owner":
             work = HomeWorkInfModel.objects.order_by('-end_time').filter(owner=user)[start:end]
