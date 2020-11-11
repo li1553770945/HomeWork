@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import HomeWorkInfModel, DoneModel
+from .models import HomeWorkInfModel, HomeWorkMembersModel
 
 
 # Register your models here.
@@ -12,9 +12,10 @@ class HomeWorkAdmin(admin.ModelAdmin):
     list_filter = ['owner', 'subject']
 
 
-class DoneAdmin(admin.ModelAdmin):
-    list_display = ['work']
+class HomeWorkMembersAdmin(admin.ModelAdmin):
+    list_display = ['work','owner','done']
+    list_display_links =['work','owner']
 
 
 admin.site.register(HomeWorkInfModel, HomeWorkAdmin)
-admin.site.register(DoneModel, DoneAdmin)
+admin.site.register(HomeWorkMembersModel, HomeWorkMembersAdmin)

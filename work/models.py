@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 import datetime
 from group.models import GroupModel
 
-
 # Create your models here.
 class HomeWorkInfModel(models.Model):
     class Meta:
@@ -26,19 +25,23 @@ class HomeWorkInfModel(models.Model):
                                                    default=False)
     member_can_see_others = models.BooleanField(verbose_name="成员可互相查看作业", choices=((False, "否"), (True, "是")),
                                                 default=False)
-    groups=models.ManyToManyField(to=GroupModel,related_name="work",verbose_name="参与组")
+    groups = models.ManyToManyField(to=GroupModel, related_name="work", verbose_name="参与组")
 
-class DoneModel(models.Model):
+    members = models.ManyToManyField(to=User,related_name='work',verbose_name='参与人员',through='HomeWorkMembersModel')
+
+
+
+class HomeWorkMembersModel(models.Model):
     class Meta:
         db_table = "done"
         verbose_name = "作业完成情况"
         verbose_name_plural = verbose_name
 
     def __str__(self):
-        return self.work
+        return "{}-{}".format(self.work, self.owner)
 
     work = models.ForeignKey(to=HomeWorkInfModel, verbose_name="作业", on_delete=models.CASCADE, related_name='done')
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Done", verbose_name="创建人")
-    create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")  # 创建的时间
+    owner = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name="Done", verbose_name="参与人")
 
-
+    done = models.BooleanField(verbose_name="已完成", db_index=True, default=False)
+    end_time = models.DateTimeField(auto_now=True, verbose_name="截止时间")  # 创建的时间

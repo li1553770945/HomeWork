@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import HomeWorkInfModel
 
 
-class HomeWorkSerializer(serializers.Serializer):  # 用于登录的表单合法性验证，防止绕过前端验证
+class HomeWorkUpSerializer(serializers.Serializer):  # 用于登录的表单合法性验证，防止绕过前端验证
     name = serializers.CharField()
     type = serializers.CharField()
     subject = serializers.CharField()
@@ -10,6 +10,7 @@ class HomeWorkSerializer(serializers.Serializer):  # 用于登录的表单合法
     end_time = serializers.CharField()
     member_can_know_donelist = serializers.CharField()
     member_can_see_others = serializers.CharField()
+
     def validate_name(self, name):
         if len(name) > 50:
             raise serializers.ValidationError("名称长度过长")
@@ -45,7 +46,8 @@ class HomeWorkSerializer(serializers.Serializer):  # 用于登录的表单合法
 
 class HomeWorkInfSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
-    groups=serializers.SerializerMethodField()
+    groups = serializers.SerializerMethodField()
+
     class Meta:
         model = HomeWorkInfModel
         fields = '__all__'
@@ -53,7 +55,7 @@ class HomeWorkInfSerializer(serializers.ModelSerializer):
     def get_owner(self, obj):
         return obj.owner.first_name
 
-    def get_groups(self,obj):
+    def get_groups(self, obj):
         groups_query = obj.groups.all()
         groups_list = list()
         for group in groups_query:
@@ -63,23 +65,35 @@ class HomeWorkInfSerializer(serializers.ModelSerializer):
             groups_list.append(group_inf)
         return groups_list
 
-class HomeWorkAllSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = HomeWorkInfModel
-        fields = ['id','name', 'end_time', 'owner','subject','end_time']
-
-    owner = serializers.SerializerMethodField()
-
-    def get_owner(self, obj):
-        return obj.owner.first_name
 
 
 class HomeWorkCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = HomeWorkInfModel
-        fields = ['id','name', 'end_time', 'owner','subject','end_time']
+        fields = ['id', 'name', 'end_time', 'owner', 'subject', 'end_time']
 
     owner = serializers.SerializerMethodField()
 
     def get_owner(self, obj):
         return obj.owner.first_name
+
+
+class HomeWorkSerializer(serializers.Serializer):
+    id = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
+    subject = serializers.SerializerMethodField()
+    end_time = serializers.DateTimeField()
+    done = serializers.BooleanField()
+
+    def get_id(self,obj):
+        return obj.work.id
+
+    def get_name(self,obj):
+        return obj.work.name
+
+    def get_owner(self,obj):
+        return obj.work.owner.first_name
+
+    def get_subject(self,obj):
+        return obj.work.subject

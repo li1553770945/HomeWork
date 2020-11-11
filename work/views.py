@@ -1,8 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import HomeWorkSerializer, HomeWorkInfSerializer, HomeWorkAllSerializer, HomeWorkCreateSerializer
+from .serializers import HomeWorkUpSerializer, HomeWorkInfSerializer, HomeWorkSerializer, HomeWorkCreateSerializer
 from common.common import get_first_error
-from .models import HomeWorkInfModel
+from .models import HomeWorkInfModel,HomeWorkMembersModel
 from datetime import datetime
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from django.http import QueryDict
@@ -25,7 +25,7 @@ class HomeWorkView(APIView):
             context['err_code'] = 1001
             context['error'] = "您还未登录"
             return Response(context)
-        data = HomeWorkSerializer(data=request.POST)
+        data = HomeWorkUpSerializer(data=request.POST)
         if not data.is_valid():  # 验证有效性
             errors = data.errors
             key, value = get_first_error(errors)
@@ -119,7 +119,7 @@ class HomeWorkView(APIView):
             context['error'] = "您还未登录"
             return Response(context)
         put_data = QueryDict(request.body)
-        data = HomeWorkSerializer(data=put_data)
+        data = HomeWorkUpSerializer(data=put_data)
         if not data.is_valid():  # 验证有效性
             errors = data.errors
             key, value = get_first_error(errors)
@@ -220,7 +220,9 @@ class MyHomeWorkNumView(APIView):
             context['error'] = "请求参数不正确"
             return Response(context)
         if status == "member":
-            context['data'] = HomeWorkInfModel.objects.filter().count()
+            context['data'] = user.work.count()
+        elif status=='notdone':
+            context['data'] = user.work.filter(done=False).count()
         elif status == "owner":
             context['data'] = HomeWorkInfModel.objects.filter(owner=user).count()
         else:
@@ -255,8 +257,11 @@ class MyHomeWorkView(APIView):
             context['error'] = "请求参数不正确"
             return Response(context)
         if status == "member":
-            work = HomeWorkInfModel.objects.order_by('-end_time').filter()[start:end]
-            context['data'] = HomeWorkAllSerializer(work, many=True).data
+            work = HomeWorkMembersModel.objects.filter(owner=user).order_by('-end_time')
+            context['data'] = HomeWorkSerializer(work, many=True).data
+        elif status=="notdone":
+            work = HomeWorkMembersModel.objects.filter(owner=user,done=False).order_by('-end_time')
+            context['data'] = HomeWorkSerializer(work, many=True).data
         elif status == "owner":
             work = HomeWorkInfModel.objects.order_by('-end_time').filter(owner=user)[start:end]
             context['data'] = HomeWorkCreateSerializer(work, many=True).data
