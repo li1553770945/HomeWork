@@ -320,9 +320,9 @@ class MyGroupNumView(APIView):
             context['error'] = "请求参数不正确"
             return Response(context)
         if status == "member":
-            context['data'] = GroupMembersModel.objects.order_by('-time').filter(user=user).count()
+            context['data'] = GroupMembersModel.objects.filter(user=user).count()
         elif status == "owner":
-            context['data'] = GroupModel.objects.order_by('-create_time').filter(owner=user).count()
+            context['data'] = GroupModel.objects.filter(owner=user).count()
         else:
             context['err_code'] = 2001
             context['error'] = "请求参数不正确"
