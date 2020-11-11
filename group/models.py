@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from work.models import HomeWorkMembersModel
 
 
 # Create your models here.
@@ -38,4 +40,16 @@ class GroupMembersModel(models.Model):
     time = models.DateTimeField(auto_now_add=True, verbose_name="加入时间")
 
     def __str__(self):
-        return "{}-{}".format(self.group,self.user.first_name)
+        return "{}-{}".format(self.group, self.user.first_name)
+
+
+def create_homework_members(sender, instance, created, **kwargs):
+    if created:
+        group = instance.group
+        user = instance.user
+        works = group.work.all()
+        for work in works:
+            HomeWorkMembersModel.objects.update_or_create(owner=user, work=work,end_time=work.end_time)
+
+
+post_save.connect(create_homework_members, sender=GroupMembersModel)

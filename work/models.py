@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 import datetime
-from group.models import GroupModel
 from django.db.models.signals import m2m_changed, pre_save
 import logging
 
@@ -30,7 +29,7 @@ class HomeWorkInfModel(models.Model):
                                                    default=False)
     member_can_see_others = models.BooleanField(verbose_name="成员可互相查看作业", choices=((False, "否"), (True, "是")),
                                                 default=False)
-    groups = models.ManyToManyField(to=GroupModel, related_name="work", verbose_name="参与组")
+    groups = models.ManyToManyField(to='group.GroupModel', related_name="work", verbose_name="参与组")
 
     members = models.ManyToManyField(to=User, related_name='work', verbose_name='参与人员', through='HomeWorkMembersModel')
 

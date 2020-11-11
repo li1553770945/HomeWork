@@ -322,7 +322,7 @@ class MyGroupNumView(APIView):
         if status == "member":
             context['data'] = GroupMembersModel.objects.order_by('-time').filter(user=user).count()
         elif status == "owner":
-            context['data'] = GroupModel.objects.order_by('-create_time').count()
+            context['data'] = GroupModel.objects.order_by('-create_time').filter(owner=user).count()
         else:
             context['err_code'] = 2001
             context['error'] = "请求参数不正确"
