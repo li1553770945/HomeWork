@@ -291,31 +291,74 @@ class SubmitView(APIView):
             context['error'] = "您还未登录"
             return Response(context)
         work_id = data.get('work_id')
+        print(work_id)
         try:
             work_id = int(work_id)
         except:
             context['err_code'] = 1002
             context['error'] = "请求参数不正确"
             return Response(context)
-        work = HomeWorkInfModel.objects.filter(id=work_id)
-        if not work.exists():
+        done = HomeWorkMembersModel.objects.filter(work__id=work_id, owner=user)
+        if not done.exists():
             context['err_code'] = 4004
-            context['error'] = "无法找到您提交的作业"
+            context['error'] = "您没有次参加本作业"
             return Response(context)
-        work = work.first()
-
+        done = done.first()
         file = request.FILES.get("file")  # 获取上传的文件，如果没有文件，则默认为None
         if not file:
             context['err_code'] = 2001
             context['error'] = "没有文件"
             return Response(context)
         dir_path = os.path.join(os.getcwd(), "file", str(datetime.now().year), str(datetime.now().month),
-                                str(work.id) + work.name)
+                                str(done.work.id))
+        file_name = user.username + user.first_name + os.path.splitext(file.name)[1]
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-        path = os.path.join(dir_path, user.username + user.first_name + os.path.splitext(file.name)[1])
+        path = os.path.join(dir_path, file_name)
+        done.done = True
+        done.file_name = file_name
+        done.upload_time= datetime.now()
+        done.save()
         destination = open(path, 'wb+')
         for chunk in file.chunks():
             destination.write(chunk)
         destination.close()
         return Response(context)
+
+    def get(self, request):
+        context = dict()
+        context['err_code'] = 0
+        data = request.GET
+        user = request.user
+        if user.is_anonymous:
+            context['err_code'] = 1001
+            context['error'] = "您还未登录"
+            return Response(context)
+        work_id = data.get('work_id')
+        print(work_id)
+        try:
+            work_id = int(work_id)
+        except:
+            context['err_code'] = 1002
+            context['error'] = "请求参数不正确"
+            return Response(context)
+        done = HomeWorkMembersModel.objects.filter(work__id=work_id, owner=user)
+        if not done.exists():
+            context['err_code'] = 4004
+            context['error'] = "您没有次参加本作业"
+            return Response(context)
+        done = done.first()
+        context['data']=dict()
+        context['data']['done']=done.done
+        context['data']['file_name']=done.file_name
+        context['data']['work_name']=done.work.name
+        return Response(context)
+
+
+class ExportView(APIView):
+    def get(self, request):
+        pass
+
+class DownloadView(APIView):
+    def get(self,request):
+        pass

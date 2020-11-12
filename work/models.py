@@ -48,6 +48,8 @@ class HomeWorkMembersModel(models.Model):
 
     done = models.BooleanField(verbose_name="已完成", db_index=True, default=False)
     end_time = models.DateTimeField(verbose_name="截止时间")  # 创建的时间
+    upload_time = models.DateTimeField(verbose_name="提交时间",null=True)
+    file_name = models.CharField(max_length=100,verbose_name="保存文件名",default="")
 
 
 def create_homework_members(sender, instance, **kwargs):

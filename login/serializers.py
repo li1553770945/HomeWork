@@ -26,7 +26,7 @@ class RegisterSerializer(serializers.Serializer):  # 用于注册的表单合法
     nickname = serializers.CharField()
 
     def validate_username(self, username):
-        if re.match('^[a-zA-Z0-9]{5,15}$', username) is None:
+        if re.match('^[A-Z0-9]{5,15}$', username) is None:
             raise serializers.ValidationError("学号不符合规定")
         else:
             return username
