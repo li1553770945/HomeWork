@@ -3,3 +3,4 @@ venv
 .idea
 /*/migrations
 *.pyc
+file

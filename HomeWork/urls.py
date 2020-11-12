@@ -16,7 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from login.views import LoginView,LogOutView,MeView,RegisterView
-from work.views import HomeWorkView,MyHomeWorkNumView,MyHomeWorkView,SubmitView
+from work.views import HomeWorkView,MyHomeWorkNumView,MyHomeWorkView,SubmitView,DownloadView,ExportView
 from group.views import GroupView,MyGroupNumView,MyGroupView,GroupMembersView
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -31,5 +31,7 @@ urlpatterns = [
     path('mygroup/',MyGroupView.as_view()),
     path('mygroupnum/',MyGroupNumView.as_view()),
     path('register/',RegisterView.as_view()),
-    path('groupmembers/',GroupMembersView.as_view())
+    path('groupmembers/',GroupMembersView.as_view()),
+    path('download/',DownloadView.as_view()),
+    path('export/',ExportView.as_view(),)
 ]

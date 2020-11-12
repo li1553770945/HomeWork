@@ -5,7 +5,7 @@ from common.common import get_first_error
 from .models import HomeWorkInfModel, HomeWorkMembersModel
 from datetime import datetime
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-from django.http import QueryDict
+from django.http import QueryDict, FileResponse
 import os
 
 
@@ -315,9 +315,13 @@ class SubmitView(APIView):
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         path = os.path.join(dir_path, file_name)
+        if done.done:
+            last_file = os.path.join(dir_path, done.file_name)
+            if os.path.exists(last_file):
+                os.remove(last_file)
         done.done = True
         done.file_name = file_name
-        done.upload_time= datetime.now()
+        done.upload_time = datetime.now()
         done.save()
         destination = open(path, 'wb+')
         for chunk in file.chunks():
@@ -348,10 +352,11 @@ class SubmitView(APIView):
             context['error'] = "您没有次参加本作业"
             return Response(context)
         done = done.first()
-        context['data']=dict()
-        context['data']['done']=done.done
-        context['data']['file_name']=done.file_name
-        context['data']['work_name']=done.work.name
+        context['data'] = dict()
+        context['data']['done'] = done.done
+        context['data']['file_name'] = done.file_name
+        context['data']['work_name'] = done.work.name
+        context['data']['upload_time'] = done.upload_time
         return Response(context)
 
 
@@ -359,6 +364,45 @@ class ExportView(APIView):
     def get(self, request):
         pass
 
+
 class DownloadView(APIView):
-    def get(self,request):
-        pass
+    def get(self, request):
+        context = dict()
+        context['err_code'] = 0
+        data = request.GET
+        user = request.user
+        if user.is_anonymous:
+            context['err_code'] = 1001
+            context['error'] = "您还未登录"
+            return Response(context)
+        work_id = data.get('work_id')
+        try:
+            work_id = int(work_id)
+        except:
+            context['err_code'] = 1002
+            context['error'] = "请求参数不正确"
+            return Response(context)
+        done = HomeWorkMembersModel.objects.filter(work__id=work_id, owner=user)
+        if not done.exists():
+            context['err_code'] = 4004
+            context['error'] = "您没有次参加本作业"
+            return Response(context)
+        done = done.first()
+        if not done.done:
+            context['err_code'] = 4004
+            context['error'] = "您还没有提交本次作业"
+            return Response(context)
+        dir_path = os.path.join(os.getcwd(), "file", str(datetime.now().year), str(datetime.now().month),
+                                str(done.work.id))
+        file_name = done.file_name
+        file = os.path.join(dir_path, file_name)
+        if not os.path.exists(file):
+            context['err_code'] = 4004
+            context['error'] = "很抱歉，该文件已过期被清理"
+            return Response(context)
+
+        file = open(file, 'rb')
+        response = FileResponse(file)
+        response['Content-Type'] = 'application/octet-stream'
+        response['Content-Disposition'] = "attachment; filename= {}".format(file_name)
+        return response
