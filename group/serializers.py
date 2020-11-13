@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import GroupModel
+from .models import GroupModel,GroupMembersModel
 import re
 
 
@@ -77,7 +77,7 @@ class GroupMembersSerializer(serializers.Serializer):
 
     def get_members(self, obj):
         members_list = list()
-        members = obj.get_members()
+        members = GroupMembersModel.objects.filter(group=obj).order_by('user__first_name')
         for member in members:
-            members_list.append({'id': member.id, 'name': member.first_name,'username':member.username})
+            members_list.append({'id': member.user.id, 'name': member.user.first_name,'username':member.user.username})
         return members_list

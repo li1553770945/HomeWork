@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import HomeWorkInfModel
+from .models import HomeWorkInfModel, HomeWorkMembersModel
 
 
 class HomeWorkUpSerializer(serializers.Serializer):  # 用于登录的表单合法性验证，防止绕过前端验证
@@ -66,7 +66,6 @@ class HomeWorkInfSerializer(serializers.ModelSerializer):
         return groups_list
 
 
-
 class HomeWorkCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = HomeWorkInfModel
@@ -86,14 +85,25 @@ class HomeWorkSerializer(serializers.Serializer):
     end_time = serializers.DateTimeField()
     done = serializers.BooleanField()
 
-    def get_id(self,obj):
+    def get_id(self, obj):
         return obj.work.id
 
-    def get_name(self,obj):
+    def get_name(self, obj):
         return obj.work.name
 
-    def get_owner(self,obj):
+    def get_owner(self, obj):
         return obj.work.owner.first_name
 
-    def get_subject(self,obj):
+    def get_subject(self, obj):
         return obj.work.subject
+
+
+class DoneListSerializer(serializers.ModelSerializer):
+    owner = serializers.SerializerMethodField()
+
+    class Meta:
+        model = HomeWorkMembersModel
+        fields = ['id', 'done', 'file_name', 'upload_time', 'owner']
+
+    def get_owner(self, obj):
+        return {'name': obj.owner.first_name, 'id': obj.owner.id}

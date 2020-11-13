@@ -292,10 +292,6 @@ class MyGroupView(APIView):
             context['err_code'] = 4003
             context['error'] = "您已经加入该小组"
             return Response(context)
-        if group.owner == user:
-            context['err_code'] = 4003
-            context['error'] = "不能加入自己创建的小组"
-            return Response(context)
         if group.password != password:
             context['err_code'] = 4002
             context['error'] = "密码错误"

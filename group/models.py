@@ -22,7 +22,6 @@ class GroupModel(models.Model):
         return str(self.name)
 
     def get_members(self):
-        yield self.owner
         join_groups = GroupMembersModel.objects.filter(group=self)
         for member in join_groups:
             yield member.user
