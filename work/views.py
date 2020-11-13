@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import HomeWorkUpSerializer, HomeWorkInfSerializer, HomeWorkSerializer, HomeWorkCreateSerializer , DoneListSerializer
+from .serializers import HomeWorkUpSerializer, HomeWorkInfSerializer, HomeWorkSerializer, HomeWorkCreateSerializer, \
+    DoneListSerializer
 from common.common import get_first_error
 from .models import HomeWorkInfModel, HomeWorkMembersModel
 from datetime import datetime
@@ -291,13 +292,19 @@ class SubmitView(APIView):
             context['error'] = "您还未登录"
             return Response(context)
         work_id = data.get('work_id')
-        print(work_id)
         try:
             work_id = int(work_id)
         except:
             context['err_code'] = 1002
             context['error'] = "请求参数不正确"
             return Response(context)
+        work = HomeWorkInfModel.objects.filter(id=work_id)
+        if not work.exists():
+            context['err_code'] = 4004
+            context['error'] = "请求的作业不存在"
+            return Response(context)
+        work = work.first()
+
         done = HomeWorkMembersModel.objects.filter(work__id=work_id, owner=user)
         if not done.exists():
             context['err_code'] = 4004
@@ -309,8 +316,9 @@ class SubmitView(APIView):
             context['err_code'] = 2001
             context['error'] = "没有文件"
             return Response(context)
-        dir_path = os.path.join(os.getcwd(), "file", str(datetime.now().year), str(datetime.now().month),
-                                str(done.work.id))
+        done.upload_time = datetime.now()
+        dir_path = os.path.join(os.getcwd(), "file", str(work.create_time.year), str(work.create_time.month),
+                                str(work.id))
         file_name = user.username + user.first_name + os.path.splitext(file.name)[1]
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
@@ -321,7 +329,7 @@ class SubmitView(APIView):
                 os.remove(last_file)
         done.done = True
         done.file_name = file_name
-        done.upload_time = datetime.now()
+
         done.save()
         destination = open(path, 'wb+')
         for chunk in file.chunks():
@@ -377,6 +385,13 @@ class DownloadView(APIView):
             context['err_code'] = 1002
             context['error'] = "请求参数不正确"
             return Response(context)
+        work = HomeWorkInfModel.objects.filter(id=work_id)
+
+        if not work.exists():
+            context['err_code'] = 4004
+            context['error'] = "请求的作业不存在"
+            return Response(context)
+        work = work.first()
         done = HomeWorkMembersModel.objects.filter(work__id=work_id, owner=user)
         if not done.exists():
             context['err_code'] = 4004
@@ -387,8 +402,8 @@ class DownloadView(APIView):
             context['err_code'] = 4004
             context['error'] = "您还没有提交本次作业"
             return Response(context)
-        dir_path = os.path.join(os.getcwd(), "file", str(datetime.now().year), str(datetime.now().month),
-                                str(done.work.id))
+        dir_path = os.path.join(os.getcwd(), "file", str(work.create_time.year), str(work.create_time.month),
+                                str(work.id))
         file_name = done.file_name
         file = os.path.join(dir_path, file_name)
         if not os.path.exists(file):
@@ -402,6 +417,7 @@ class DownloadView(APIView):
         response['Content-Disposition'] = "attachment; filename= {}".format(file_name)
         return response
 
+
 class ExportView(APIView):
     def get(self, request):
         context = dict()
@@ -413,21 +429,34 @@ class ExportView(APIView):
             context['error'] = "您还未登录"
             return Response(context)
         work_id = data.get('work_id')
-        user_id=data.get('user_id')
+        user_id = data.get('user_id')
         try:
             work_id = int(work_id)
         except:
             context['err_code'] = 1002
             context['error'] = "请求参数不正确"
             return Response(context)
-        if user_id is not None: # 如果同时附带user_id，那就是点击了下载单个用户文件
+
+        work = HomeWorkInfModel.objects.filter(id=work_id)
+
+        if not work.exists():
+            context['err_code'] = 4004
+            context['error'] = "请求的作业不存在"
+            return Response(context)
+        work = work.first()
+        if user != work.owner:
+            context['err_code'] = 4003
+            context['error'] = "您没有权限查看此内容"
+            return Response(context)
+
+        if user_id is not None:  # 如果同时附带user_id，那就是点击了下载单个用户文件
             try:
-                user_id=int(user_id)
+                user_id = int(user_id)
             except:
-                context['err_code']= 1002
+                context['err_code'] = 1002
                 context['error'] = "请求参数不正确"
                 return Response(context)
-            file_name_upload=data.get('file_name')
+            file_name_upload = data.get('file_name')
             if file_name_upload is None:
                 context['err_code'] = 1002
                 context['error'] = "请求参数不正确，没有文件名"
@@ -442,8 +471,8 @@ class ExportView(APIView):
                 context['err_code'] = 4004
                 context['error'] = "该用户还没有完成本次作业"
                 return Response(context)
-            dir_path = os.path.join(os.getcwd(), "file", str(datetime.now().year), str(datetime.now().month),
-                                    str(done.work.id))
+            dir_path = os.path.join(os.getcwd(), "file", str(work.create_time.year), str(work.create_time.month),
+                                    str(work.id))
             file_name = done.file_name
             if file_name != file_name_upload:
                 context['err_code'] = 3001
@@ -460,12 +489,34 @@ class ExportView(APIView):
             response['Content-Type'] = 'application/octet-stream'
             response['Content-Disposition'] = "attachment; filename= {}".format(file_name)
             return response
-        else: # 如果user_id为None，那么可以认为是导出操作
-            pass
+        else:  # 如果user_id为None，那么可以认为是导出操作
+            dir_path = os.path.join(os.getcwd(), "file", str(work.create_time.year), str(work.create_time.month),
+                                    str(work.id))
+            if not os.path.exists(dir_path):
+                context['err_code'] = 4004
+                context['error'] = "很抱歉，该文件已过期被清理"
+                return Response(context)
+
+            from io import BytesIO
+            import zipfile
+
+            temp_io = BytesIO()
+
+            filelists = os.listdir(dir_path)
+            z = zipfile.ZipFile(temp_io, 'w', zipfile.ZIP_DEFLATED)
+            for fil in filelists:
+                filefullpath = os.path.join(dir_path, fil)
+                z.write(filefullpath, fil)
+            z.close()
+            temp_io.seek(0)
+            response = FileResponse(temp_io)
+            response['Content-Type'] = 'application/octet-stream'
+            response['Content-Disposition'] = "attachment;"
+            return response
 
 
 class DoneListView(APIView):
-    def get(self,request):
+    def get(self, request):
         context = dict()
         context['err_code'] = 0
         data = request.GET
@@ -481,17 +532,17 @@ class DoneListView(APIView):
             context['err_code'] = 1002
             context['error'] = "请求参数不正确"
             return Response(context)
-        work=HomeWorkInfModel.objects.filter(id=work_id).order_by('done')
+        work = HomeWorkInfModel.objects.filter(id=work_id).order_by('done')
         if not work.exists():
             context['err_code'] = 4004
             context['error'] = "没有找到请求的作业"
             return Response(context)
-        work=work.first()
+        work = work.first()
         if user != work.owner:
             context['err_code'] = 4003
             context['error'] = "您没有权限查看该内容"
             return Response(context)
-        done = HomeWorkMembersModel.objects.filter(work__id=work_id).order_by('done','-upload_time')
-        data=DoneListSerializer(done,many=True).data
-        context['data']=data
+        done = HomeWorkMembersModel.objects.filter(work__id=work_id).order_by('done', '-upload_time')
+        data = DoneListSerializer(done, many=True).data
+        context['data'] = data
         return Response(context)
