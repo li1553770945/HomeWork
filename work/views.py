@@ -8,7 +8,7 @@ from datetime import datetime
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from django.http import QueryDict, FileResponse
 import os
-
+from group.models import GroupModel,GroupMembersModel
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
 
@@ -44,16 +44,32 @@ class HomeWorkView(APIView):
                 return Response(context)
             groups = str(groups)
             groups = groups.split(',')
-            groups_in = list()
+            groups_int = list()
             try:
                 for group in groups:
                     group = int(group)
-                    groups_in.append(group)
+                    groups_int.append(group)
             except:
                 context['error'] = "小组id只能为int"
                 context['err_code'] = 2002
                 return Response(context)
-
+            for group_id in groups_int:
+                group = GroupModel.objects.filter(id=group_id)
+                if not group.exists():
+                    context['error'] = "添加了无效的小组"
+                    context['err_code'] = 4004
+                    return Response(context)
+                group=group.first()
+                if user == group.owner:
+                    continue
+                if not GroupMembersModel.objects.filter(user=user,group__id=group_id).exists():
+                    context['error'] = "添加了无效的小组"
+                    context['err_code'] = 4004
+                    return Response(context)
+                if not group.member_can_use:
+                    context['error'] = "添加了无效的小组"
+                    context['err_code'] = 4004
+                    return Response(context)
             homework = HomeWorkInfModel.objects.create(name=data['name'],
                                                        type=data['type'],
                                                        subject=data['subject'],
@@ -71,7 +87,7 @@ class HomeWorkView(APIView):
                                                                          ),
 
                                                        )
-            for group_id in groups:
+            for group_id in groups_int:
                 homework.groups.add(group_id)
             context['data'] = dict()
             context['data']['id'] = homework.id

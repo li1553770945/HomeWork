@@ -71,7 +71,7 @@ class GroupView(APIView):
             context['err_code'] = 2002
             return Response(context)
         data = data.data
-        group = GroupModel.objects.create(owner=user, name=data['name'], desc=data['desc'], password=data['password'])
+        group = GroupModel.objects.create(owner=user, name=data['name'], desc=data['desc'], password=data['password'],member_can_use=data['member_can_use'])
         context['data'] = dict()
         context['data']['id'] = group.id
         return Response(context)
@@ -115,7 +115,7 @@ class GroupView(APIView):
             context['err_code'] = 4003
             context['error'] = "您无权执行此操作"
             return Response(context)
-        querys.update(name=data['name'], desc=data['desc'], password=data['password'])
+        querys.update(name=data['name'], desc=data['desc'], password=data['password'],member_can_use=data['member_can_use'])
         return Response(context)
 
     def delete(self, request):
@@ -255,6 +255,14 @@ class MyGroupView(APIView):
         elif status == "owner":
             groups = GroupModel.objects.order_by('-create_time').filter(owner=user)[start:end]
             context['data'] = CreateGroupsSerializer(groups, many=True).data
+        elif status == "can_use":
+            groups1 = GroupModel.objects.order_by('-create_time').filter(owner=user)
+            groups2 = user.Groups.filter(member_can_use=True)
+            groups = groups1 | groups2
+            groups= groups.distinct()
+            groups.order_by('-create_time')
+            groups = groups[start:end]
+            context['data'] = CreateGroupsSerializer(groups, many=True).data
         else:
             context['err_code'] = 2001
             context['error'] = "请求参数不正确"
@@ -319,6 +327,13 @@ class MyGroupNumView(APIView):
             context['data'] = GroupMembersModel.objects.filter(user=user).count()
         elif status == "owner":
             context['data'] = GroupModel.objects.filter(owner=user).count()
+        elif status == "can_use":
+            groups1 = GroupModel.objects.order_by('-create_time').filter(owner=user)
+            groups2 = user.Groups.filter(member_can_use=True)
+            groups = groups1 | groups2
+            groups = groups.distinct()
+            groups.order_by('-create_time')
+            context['data'] = groups.count()
         else:
             context['err_code'] = 2001
             context['error'] = "请求参数不正确"

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import GroupModel,GroupMembersModel
+from .models import GroupModel, GroupMembersModel
 import re
 
 
@@ -8,7 +8,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroupModel
-        fields = ['id', 'name', 'desc', 'create_time', 'owner', 'members', 'password']
+        fields = ['id', 'name', 'desc', 'create_time', 'owner', 'members', 'password', 'member_can_use']
 
     def get_owner(self, obj):
         return obj.owner.first_name
@@ -18,6 +18,7 @@ class GroupUnSerializer(serializers.Serializer):
     name = serializers.CharField()
     desc = serializers.CharField(required=False, default="")
     password = serializers.CharField()
+    member_can_use = serializers.BooleanField()
 
     def validate_name(self, name):
         if valid_group_information('name', name):
@@ -79,5 +80,6 @@ class GroupMembersSerializer(serializers.Serializer):
         members_list = list()
         members = GroupMembersModel.objects.filter(group=obj).order_by('user__first_name')
         for member in members:
-            members_list.append({'id': member.user.id, 'name': member.user.first_name,'username':member.user.username})
+            members_list.append(
+                {'id': member.user.id, 'name': member.user.first_name, 'username': member.user.username})
         return members_list

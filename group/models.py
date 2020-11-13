@@ -17,7 +17,8 @@ class GroupModel(models.Model):
                               db_index=True)
     password = models.CharField(max_length=20, verbose_name="小组密码", null=True)
     create_time = models.DateTimeField(verbose_name="创建时间", auto_now_add=True, null=True)
-
+    member_can_use = models.BooleanField(verbose_name='成员可使用该组创建作业',default=False)
+    members = models.ManyToManyField(to=User,verbose_name="成员",through='GroupMembersModel',related_name='Groups')
     def __str__(self):
         return str(self.name)
 
@@ -35,7 +36,7 @@ class GroupMembersModel(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="用户", related_name="joined_groups",
                              db_index=True)
-    group = models.ForeignKey(GroupModel, on_delete=models.CASCADE, verbose_name="小组", related_name="members")
+    group = models.ForeignKey(GroupModel, on_delete=models.CASCADE, verbose_name="小组")
     time = models.DateTimeField(auto_now_add=True, verbose_name="加入时间")
 
     def __str__(self):
