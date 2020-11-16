@@ -8,7 +8,8 @@ from datetime import datetime
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from django.http import QueryDict, FileResponse
 import os
-from group.models import GroupModel,GroupMembersModel
+from group.models import GroupModel, GroupMembersModel
+
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
 
@@ -59,10 +60,10 @@ class HomeWorkView(APIView):
                     context['error'] = "添加了无效的小组"
                     context['err_code'] = 4004
                     return Response(context)
-                group=group.first()
+                group = group.first()
                 if user == group.owner:
                     continue
-                if not GroupMembersModel.objects.filter(user=user,group__id=group_id).exists():
+                if not GroupMembersModel.objects.filter(user=user, group__id=group_id).exists():
                     context['error'] = "添加了无效的小组"
                     context['err_code'] = 4004
                     return Response(context)
@@ -426,7 +427,9 @@ class DownloadView(APIView):
             context['err_code'] = 4004
             context['error'] = "很抱歉，该文件已过期被清理"
             return Response(context)
-
+        if data.get('status'):
+            context['er_code'] = 0
+            return Response(context)
         file = open(file, 'rb')
         response = FileResponse(file)
         response['Content-Type'] = 'application/octet-stream'
@@ -436,6 +439,7 @@ class DownloadView(APIView):
 
 class ExportView(APIView):
     def get(self, request):
+
         context = dict()
         context['err_code'] = 0
         data = request.GET
@@ -494,17 +498,20 @@ class ExportView(APIView):
                 context['err_code'] = 3001
                 context['error'] = "该文件已发生变化，请刷新页面重试"
                 return Response(context)
-            file = os.path.join(dir_path, file_name)
-            if not os.path.exists(file):
+            file_name = os.path.join(dir_path, file_name)
+            if not os.path.exists(file_name):
                 context['err_code'] = 4004
                 context['error'] = "很抱歉，该文件已过期被清理"
                 return Response(context)
-
-            file = open(file, 'rb')
+            if data.get('status'):
+                context['er_code'] = 0
+                return Response(context)
+            file = open(file_name, 'rb')
             response = FileResponse(file)
             response['Content-Type'] = 'application/octet-stream'
             response['Content-Disposition'] = "attachment; filename= {}".format(file_name)
             return response
+
         else:  # 如果user_id为None，那么可以认为是导出操作
             dir_path = os.path.join(os.getcwd(), "file", str(work.create_time.year), str(work.create_time.month),
                                     str(work.id))
@@ -512,23 +519,40 @@ class ExportView(APIView):
                 context['err_code'] = 4004
                 context['error'] = "很抱歉，该文件已过期被清理"
                 return Response(context)
+            export = export_list.get(str(work_id))
+            if export is None:
+                export_fun(dir_path, work_id)
+                context['err_code'] = 0
+                context['data'] = dict()
+                context['data']['msg'] = "后台已经开始导出，请您耐心等待"
+                context['data']['done'] = False
+                return Response(context)
+            else:
+                if export.get_error_status():
+                    context['er_code'] = 5001
+                    context['error'] = export.get_error()
+                    return Response(context)
 
-            from io import BytesIO
-            import zipfile
-
-            temp_io = BytesIO()
-
-            filelists = os.listdir(dir_path)
-            z = zipfile.ZipFile(temp_io, 'w', zipfile.ZIP_DEFLATED)
-            for fil in filelists:
-                filefullpath = os.path.join(dir_path, fil)
-                z.write(filefullpath, fil)
-            z.close()
-            temp_io.seek(0)
-            response = FileResponse(temp_io)
-            response['Content-Type'] = 'application/octet-stream'
-            response['Content-Disposition'] = "attachment;"
-            return response
+                if export.get_done_status():
+                    status = data.get('status')
+                    if status is not None:
+                        context['er_code'] = 0
+                        context['data'] = dict()
+                        context['done'] = True
+                        return Response(context)
+                    else:
+                        file = export.file_name
+                        file = open(file, 'rb')
+                        response = FileResponse(file)
+                        response['Content-Type'] = 'application/octet-stream'
+                        response['Content-Disposition'] = "attachment;"
+                        return response
+                else:
+                    context['err_code'] = 0
+                    context['data'] = dict()
+                    context['data']['msg'] = "导出正在进行中，请您稍后"
+                    context['data']['done'] = False
+                    return Response(context)
 
 
 class DoneListView(APIView):
@@ -562,3 +586,89 @@ class DoneListView(APIView):
         data = DoneListSerializer(done, many=True).data
         context['data'] = data
         return Response(context)
+
+
+export_list = dict()
+
+
+def export_fun(dir_path, work_id):
+    import threading
+    t = threading.Thread(target=export_thread, args=(dir_path, work_id))
+    t.start()
+
+
+def export_thread(dir_path, work_id):
+    export = ExportThread(dir_path, work_id)
+    export_list[str(work_id)] = export
+    export.export()
+
+
+
+
+class ExportThread:
+    def __init__(self, dir_path, work_id):
+        self.dir_path = dir_path
+        self.file_name = os.path.join(self.dir_path, 'export.zip')
+        self.is_done = False
+        self.error = False
+        self.err_msg = ''
+        self.work_id = work_id
+
+    def export(self):
+        try:
+            import zipfile
+            filelists = os.listdir(self.dir_path)
+            z = zipfile.ZipFile(self.file_name, 'w', zipfile.ZIP_DEFLATED)
+            for fil in filelists:
+                filefullpath = os.path.join(self.dir_path, fil)
+                z.write(filefullpath,arcname = os.path.join('作业',fil))
+            z.close()
+        except Exception as e:
+            self.error = True
+            self.err_msg = str(e)
+        self.waiting()
+
+    def waiting(self):
+        self.is_done = True
+        import time
+        time.sleep(120)
+        self.end()
+
+    def get_done_status(self):
+        if os.path.exists(self.file_name):
+            return self.is_done
+        else:
+            self.export()
+            return False
+
+    def get_error_status(self):
+        return self.error
+
+    def get_error(self):
+        return self.err_msg
+
+    def end(self):
+        if str(self.work_id) in export_list:
+            del export_list[str(self.work_id)]
+        del_fun(self.file_name)
+        return
+
+
+def del_fun(file_name):
+    import threading
+    t = threading.Thread(target=del_thread, args=(file_name,))
+    t.start()
+
+
+def del_thread(file_name):
+    import time
+    i = 0
+    while i < 10:
+        if os.path.exists(file_name):
+            try:
+                os.remove(file_name)
+            except:
+                time.sleep(60)
+                i += 1
+        else:
+            return
