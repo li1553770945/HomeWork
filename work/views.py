@@ -619,9 +619,10 @@ class ExportThread:
             import zipfile
             filelists = os.listdir(self.dir_path)
             z = zipfile.ZipFile(self.file_name, 'w', zipfile.ZIP_DEFLATED)
+            name = HomeWorkInfModel.objects.get(id=int(self.work_id)).name
             for fil in filelists:
                 filefullpath = os.path.join(self.dir_path, fil)
-                z.write(filefullpath,arcname = os.path.join('作业',fil))
+                z.write(filefullpath,arcname = os.path.join(name,fil))
             z.close()
         except Exception as e:
             self.error = True
@@ -635,11 +636,7 @@ class ExportThread:
         self.end()
 
     def get_done_status(self):
-        if os.path.exists(self.file_name):
-            return self.is_done
-        else:
-            self.export()
-            return False
+       return self.is_done
 
     def get_error_status(self):
         return self.error
