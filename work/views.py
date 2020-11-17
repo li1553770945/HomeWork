@@ -608,7 +608,8 @@ def export_thread(dir_path, work_id):
 class ExportThread:
     def __init__(self, dir_path, work_id):
         self.dir_path = dir_path
-        self.file_name = os.path.join(self.dir_path, 'export.zip')
+        import time
+        self.file_name = os.path.join(os.path.abspath(os.path.dirname(dir_path)+os.path.sep+"."), 'export{}.zip'.format(str(time.time())))
         self.is_done = False
         self.error = False
         self.err_msg = ''
