@@ -529,16 +529,16 @@ class ExportView(APIView):
                 return Response(context)
             else:
                 if export.get_error_status():
-                    context['er_code'] = 5001
+                    context['err_code'] = 5001
                     context['error'] = export.get_error()
                     return Response(context)
 
                 if export.get_done_status():
                     status = data.get('status')
                     if status is not None:
-                        context['er_code'] = 0
+                        context['err_code'] = 0
                         context['data'] = dict()
-                        context['done'] = True
+                        context['data']['done'] = True
                         return Response(context)
                     else:
                         file = export.file_name
