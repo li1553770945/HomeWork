@@ -60,7 +60,6 @@ def create_homework_members(sender, instance, **kwargs):
 
 
 def change_end_time(sender, instance, **kwargs):
-    logger.critical("触发一次次改截止时间")
     HomeWorkMembersModel.objects.filter(work=instance).update(end_time=instance.end_time)
 
 

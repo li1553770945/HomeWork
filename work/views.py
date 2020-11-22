@@ -175,16 +175,12 @@ class HomeWorkView(APIView):
                 context['err_code'] = 4003
                 context['error'] = "您无权执行此操作"
                 return Response(context)
-            querys.update(name=data['name'],
-                          type=data['type'],
-                          subject=data['subject'],
-                          remark=data.get('remark') if data.get('remark') else '',
-                          owner=user,
-                          member_can_know_donelist=True if data[
-                                                               'member_can_know_donelist'] == 'true' else False,
-                          member_can_see_others=True if data[
-                                                            'member_can_see_others'] == 'true' else False,
-                          )
+            query.name = data['name']
+            query.type = data['type']
+            query.subject = data['subject']
+            query.remark = data.get('remark') if data.get('remark') else ''
+            query.member_can_know_donelist=True if data['member_can_know_donelist'] == 'true' else False
+            query.member_can_see_others=True if data['member_can_see_others'] == 'true' else False
             query.end_time = datetime(year=int(end_time[0:4]),
                                       month=int(end_time[5:7]),
                                       day=int(end_time[8:10]),
