@@ -21,9 +21,9 @@ class HomeWorkInfModel(models.Model):
     type = models.CharField(max_length=100, choices=(('file', "文件"), ('hypertext', "超文本")), default="hypertext",
                             verbose_name="作业类型")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")  # 创建的时间
-    subject = models.CharField(max_length=30, verbose_name="科目")
+    subject = models.CharField(max_length=30, verbose_name="科目",db_index=True)
     remark = models.CharField(max_length=500, verbose_name="备注", null=True, blank=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ReleaseHomeWork", verbose_name="创建人")
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ReleaseHomeWork", verbose_name="创建人",db_index=True)
     end_time = models.DateTimeField(verbose_name="截止时间", default=datetime.datetime.now())
     member_can_know_donelist = models.BooleanField(verbose_name="成员可查看完成情况", choices=((False, "否"), (True, "是")),
                                                    default=False)
@@ -33,6 +33,7 @@ class HomeWorkInfModel(models.Model):
 
     members = models.ManyToManyField(to=User, related_name='work', verbose_name='参与人员', through='HomeWorkMembersModel')
 
+    can_submit_after_end = models.BooleanField(default=True,verbose_name="截止时间已过仍然可以提交")
 
 class HomeWorkMembersModel(models.Model):
     class Meta:
@@ -43,8 +44,8 @@ class HomeWorkMembersModel(models.Model):
     def __str__(self):
         return "{}-{}".format(self.work, self.owner)
 
-    work = models.ForeignKey(to=HomeWorkInfModel, verbose_name="作业", on_delete=models.CASCADE, related_name='done')
-    owner = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name="Done", verbose_name="参与人")
+    work = models.ForeignKey(to=HomeWorkInfModel, verbose_name="作业", on_delete=models.CASCADE, related_name='done',db_index=True)
+    owner = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name="Done", verbose_name="参与人",db_index=True)
 
     done = models.BooleanField(verbose_name="已完成", db_index=True, default=False)
     end_time = models.DateTimeField(verbose_name="截止时间")  # 创建的时间
