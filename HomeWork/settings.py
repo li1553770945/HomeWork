@@ -26,7 +26,12 @@ SECRET_KEY = conf.get("django","secret_key")
 DEBUG = bool(conf.get("django","debug"))
 
 ALLOWED_HOSTS = ['*']
-
+INTERNAL_IPS = ['*']
+DEBUG_TOOLBAR_CONFIG = {
+    'JQUERY_URL': 'https://cdn.bootcss.com/jquery/2.2.4/jquery.min.js',
+    'SHOW_COLLAPSED': True,
+    'SHOW_TOOLBAR_CALLBACK': lambda x: True,
+}
 # Application definition
 
 INSTALLED_APPS = [
@@ -40,8 +45,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'work',
     'group',
+    'debug_toolbar',
 ]
-
+DEBUG_TOOLBAR_PATCH_SETTINGS = False
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -50,6 +56,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+
 ]
 
 ROOT_URLCONF = 'HomeWork.urls'
