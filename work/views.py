@@ -9,7 +9,7 @@ from rest_framework.authentication import SessionAuthentication, BasicAuthentica
 from django.http import QueryDict, FileResponse
 import os
 from group.models import GroupModel, GroupMembersModel
-
+import pytz
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
 
@@ -80,6 +80,8 @@ class HomeWorkView(APIView):
                                                                                             'member_can_know_donelist'] == 'true' else False,
                                                        member_can_see_others=True if data[
                                                                                          'member_can_see_others'] == 'true' else False,
+                                                       can_submit_after_end=True if data[
+                                                                                         'can_submit_after_end'] == 'true' else False,
                                                        end_time=datetime(year=int(end_time[0:4]),
                                                                          month=int(end_time[5:7]),
                                                                          day=int(end_time[8:10]),
@@ -175,16 +177,13 @@ class HomeWorkView(APIView):
                 context['err_code'] = 4003
                 context['error'] = "您无权执行此操作"
                 return Response(context)
-            querys.update(name=data['name'],
-                          type=data['type'],
-                          subject=data['subject'],
-                          remark=data.get('remark') if data.get('remark') else '',
-                          owner=user,
-                          member_can_know_donelist=True if data[
-                                                               'member_can_know_donelist'] == 'true' else False,
-                          member_can_see_others=True if data[
-                                                            'member_can_see_others'] == 'true' else False,
-                          )
+            query.name = data['name']
+            query.type = data['type']
+            query.subject = data['subject']
+            query.remark = data.get('remark') if data.get('remark') else ''
+            query.member_can_know_donelist=True if data['member_can_know_donelist'] == 'true' else False
+            query.member_can_see_others=True if data['member_can_see_others'] == 'true' else False
+            query.can_submit_after_end=True if data['can_submit_after_end'] == 'true' else False
             query.end_time = datetime(year=int(end_time[0:4]),
                                       month=int(end_time[5:7]),
                                       day=int(end_time[8:10]),
@@ -295,7 +294,7 @@ class MyHomeWorkView(APIView):
             return Response(context)
         return Response(context)
 
-
+# TODO 提交作业不能撤回
 class SubmitView(APIView):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
 
@@ -326,6 +325,10 @@ class SubmitView(APIView):
         if not done.exists():
             context['err_code'] = 4004
             context['error'] = "您没有次参加本作业"
+            return Response(context)
+        if not work.can_submit_after_end and datetime.utcnow().replace(tzinfo=pytz.UTC) > work.end_time:
+            context['err_code'] = 6001
+            context['error'] = "很抱歉，该作业提交截止时间已过"
             return Response(context)
         done = done.first()
         file = request.FILES.get("file")  # 获取上传的文件，如果没有文件，则默认为None
@@ -529,16 +532,16 @@ class ExportView(APIView):
                 return Response(context)
             else:
                 if export.get_error_status():
-                    context['er_code'] = 5001
+                    context['err_code'] = 5001
                     context['error'] = export.get_error()
                     return Response(context)
 
                 if export.get_done_status():
                     status = data.get('status')
                     if status is not None:
-                        context['er_code'] = 0
+                        context['err_code'] = 0
                         context['data'] = dict()
-                        context['done'] = True
+                        context['data']['done'] = True
                         return Response(context)
                     else:
                         file = export.file_name
@@ -608,7 +611,8 @@ def export_thread(dir_path, work_id):
 class ExportThread:
     def __init__(self, dir_path, work_id):
         self.dir_path = dir_path
-        self.file_name = os.path.join(self.dir_path, 'export.zip')
+        import time
+        self.file_name = os.path.join(os.path.abspath(os.path.dirname(dir_path)+os.path.sep+"."), 'export{}.zip'.format(str(time.time())))
         self.is_done = False
         self.error = False
         self.err_msg = ''

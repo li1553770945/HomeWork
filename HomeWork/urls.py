@@ -14,26 +14,28 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path,include
 from login.views import LoginView,LogOutView,MeView,RegisterView
 from work.views import HomeWorkView,MyHomeWorkNumView,MyHomeWorkView,SubmitView,DownloadView,ExportView,DoneListView
 from group.views import GroupView,MyGroupNumView,MyGroupView,GroupMembersView
+import debug_toolbar
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('login/',LoginView.as_view()),
-    path('logout/',LogOutView.as_view()),
-    path('me/',MeView.as_view()),
-    path('homework/',HomeWorkView.as_view()),
-    path('myhomeworknum/',MyHomeWorkNumView.as_view()),
-    path('myhomework/',MyHomeWorkView.as_view()),
-    path('submit/',SubmitView.as_view(),),
-    path('group/',GroupView.as_view()),
-    path('mygroup/',MyGroupView.as_view()),
-    path('mygroupnum/',MyGroupNumView.as_view()),
-    path('register/',RegisterView.as_view()),
-    path('groupmembers/',GroupMembersView.as_view()),
-    path('download/',DownloadView.as_view()),
-    path('export/',ExportView.as_view()),
-    path('donelist/',DoneListView.as_view()),
-
+    path('api/admin/', admin.site.urls),
+    path('api/login/',LoginView.as_view()),
+    path('api/logout/',LogOutView.as_view()),
+    path('api/me/',MeView.as_view()),
+    path('api/homework/',HomeWorkView.as_view()),
+    path('api/myhomeworknum/',MyHomeWorkNumView.as_view()),
+    path('api/myhomework/',MyHomeWorkView.as_view()),
+    path('api/submit/',SubmitView.as_view(),),
+    path('api/group/',GroupView.as_view()),
+    path('api/mygroup/',MyGroupView.as_view()),
+    path('api/mygroupnum/',MyGroupNumView.as_view()),
+    path('api/register/',RegisterView.as_view()),
+    path('api/groupmembers/',GroupMembersView.as_view()),
+    path('api/download/',DownloadView.as_view()),
+    path('api/export/',ExportView.as_view()),
+    path('api/donelist/',DoneListView.as_view()),
+    path('__debug__/',include(debug_toolbar.urls))
 ]
+

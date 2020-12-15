@@ -10,7 +10,7 @@ class HomeWorkUpSerializer(serializers.Serializer):  # 用于登录的表单合�
     end_time = serializers.CharField()
     member_can_know_donelist = serializers.CharField()
     member_can_see_others = serializers.CharField()
-
+    can_submit_after_end = serializers.CharField()
     def validate_name(self, name):
         if len(name) > 50:
             raise serializers.ValidationError("名称长度过长")

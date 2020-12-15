@@ -4,3 +4,5 @@ venv
 /*/migrations
 *.pyc
 file
+*.docx
+main.ini
